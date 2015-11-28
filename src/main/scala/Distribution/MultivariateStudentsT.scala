@@ -1,4 +1,4 @@
-package Distribution
+package org.apache.spark.mllib.stat.distribution
 
 import breeze.linalg.{Vector => BV, Matrix => BM}
 import breeze.linalg._
@@ -12,7 +12,7 @@ import org.apache.spark.mllib.linalg.{Vector, Matrix}
  * The MV Student's T distribution is a distribution over a real-valued vector
  *
  * @param mu The mean vector
- * @param W0 A DxD positive definite matrix
+ * @param W0 The precision matrix, DxD positive definite matrix
  * @param nu Degrees of freedom parameter, double
  */
 
@@ -31,24 +31,24 @@ class MultivariateStudentsT(
 
   private lazy val W0LogDet = logdet(W0Breeze)._2
 
-  private def pdf(x: BV[Double], Sigma: BM[Double]): Double = {
-    math.exp(logpdf(x, Sigma))
+  private def pdf(x: BV[Double]): Double = {
+    math.exp(logpdf(x))
   }
 
   /** Returns the log-density  at given point, x */
-  private def logpdf(x: BV[Double], Sigma: BM[Double]): Double = {
+  private def logpdf(x: BV[Double]): Double = {
     val normConstant = lgamma((nu + D) / 2.0) - lgamma(nu / 2.0)
     -D * 0.5 * math.log(math.Pi * nu)
-    -0.5 * W0LogDet
+    +0.5 * W0LogDet
     val xDenseMinusMu = x.toDenseVector - muBreeze.toDenseVector
-    normConstant - ((nu + D) / 2.0) * math.log(1.0 + (xDenseMinusMu.t * W0BreezeInv * xDenseMinusMu) / nu)
+    normConstant - ((nu + D) / 2.0) * math.log(1.0 + (xDenseMinusMu.t * W0Breeze * xDenseMinusMu) / nu)
   }
 
-  def pdf(x: Vector, Sigma: Matrix): Double = {
-    pdf(x.toBreeze, Sigma.toBreeze)
+  def pdf(x: Vector): Double = {
+    pdf(x.toBreeze)
   }
 
-  def logpdf(x: Vector, Sigma: Matrix): Double = {
-    logpdf(x.toBreeze, Sigma.toBreeze)
+  def logpdf(x: Vector): Double = {
+    logpdf(x.toBreeze)
   }
 }

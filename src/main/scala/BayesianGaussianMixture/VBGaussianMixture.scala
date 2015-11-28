@@ -111,7 +111,9 @@ class VBGaussianMixture private (
     new VBGaussianMixtureModel(dirichlet, nw)
   }
 
-  // companion class to provide zero constructor for ExpectationSum
+  /* companion class to provide zero constructor for ExpectationSum
+   * Adapted from Spark MLIB GaussianMixtureModel.scala
+   */
   private object ExpectationSum {
     def zero(k: Int, d: Int): ExpectationSum = {
       new ExpectationSum(0.0, Array.fill(k)(0.0),

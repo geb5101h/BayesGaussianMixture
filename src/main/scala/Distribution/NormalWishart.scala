@@ -19,7 +19,7 @@ import org.apache.spark.mllib.linalg.{ Vectors, Vector, Matrices, Matrix }
  *
  * @param mu The mean vector
  * @param lambda The scale parameter
- * @param L A DxD positive definite matrix
+ * @param L A DxD positive definite matrix, the natural parameter for the exponential family
  * @param nu Degrees of freedom parameter, integer
  */
 class NormalWishart(
