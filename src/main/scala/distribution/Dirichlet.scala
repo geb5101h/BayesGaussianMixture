@@ -18,7 +18,7 @@ import org.apache.spark.mllib.util.MLUtils
 class Dirichlet(
     val alpha: Vector) extends Serializable {
 
-  require(alpha.toArray.map(x => x <= 0.0).contains(true), "Parameters must be strictly positive")
+  require(!alpha.toArray.map(a => a <= 0.0).contains(true), "Parameters must be strictly positive")
 
   private val alphaBreeze = alpha.toBreeze.toDenseVector
 
