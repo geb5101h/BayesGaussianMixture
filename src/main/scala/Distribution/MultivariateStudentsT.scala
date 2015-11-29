@@ -12,24 +12,24 @@ import org.apache.spark.mllib.linalg.{Vector, Matrix}
  * The MV Student's T distribution is a distribution over a real-valued vector
  *
  * @param mu The mean vector
- * @param W0 The precision matrix, DxD positive definite matrix
+ * @param W The precision matrix, DxD positive definite matrix
  * @param nu Degrees of freedom parameter, double
  */
 
 class MultivariateStudentsT(
     mu: Vector,
-    W0: Matrix,
+    W: Matrix,
     nu: Double) extends Serializable {
   require(nu > 0, "Degrees of freedom must be positive")
 
   private val muBreeze = mu.toBreeze.toDenseVector
-  private val W0Breeze = W0.toBreeze.toDenseMatrix
+  private val WBreeze = W.toBreeze.toDenseMatrix
 
   val D = muBreeze.length
 
-  private lazy val W0BreezeInv = inv(W0Breeze)
+  private lazy val WBreezeInv = inv(WBreeze)
 
-  private lazy val W0LogDet = logdet(W0Breeze)._2
+  private lazy val WLogDet = logdet(WBreeze)._2
 
   private def pdf(x: BV[Double]): Double = {
     math.exp(logpdf(x))
@@ -39,9 +39,9 @@ class MultivariateStudentsT(
   private def logpdf(x: BV[Double]): Double = {
     val normConstant = lgamma((nu + D) / 2.0) - lgamma(nu / 2.0)
     -D * 0.5 * math.log(math.Pi * nu)
-    +0.5 * W0LogDet
+    +0.5 * WLogDet
     val xDenseMinusMu = x.toDenseVector - muBreeze.toDenseVector
-    normConstant - ((nu + D) / 2.0) * math.log(1.0 + (xDenseMinusMu.t * W0Breeze * xDenseMinusMu) / nu)
+    normConstant - ((nu + D) / 2.0) * math.log(1.0 + (xDenseMinusMu.t * WBreeze * xDenseMinusMu) / nu)
   }
 
   def pdf(x: Vector): Double = {

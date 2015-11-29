@@ -12,7 +12,7 @@ import org.apache.spark.mllib.linalg.{ Vectors, Vector, Matrices, Matrix }
  * The Normal-Wishart distribution is a distribution over the tuple (mu,Lambda),
  * where mu is a real-valued vector and Lambda is a positive-definite DxD matrix.
  * It is equivalent to the hierarchical model
- *      mu     ~ Normal(mu0,(lambda*Lambda)^-1)
+ *      mu     ~ Normal(mu0,(beta*Lambda)^-1)
  *      Lambda ~ Wishart(L,nu)
  *
  * We use the convention that L is the natural parameter for the exponential family
@@ -24,14 +24,14 @@ import org.apache.spark.mllib.linalg.{ Vectors, Vector, Matrices, Matrix }
  */
 class NormalWishart(
     val mu0: Vector,
-    val lambda: Double,
+    val beta: Double,
     val L: Matrix,
     val nu: Double) extends Serializable {
 
   val D = L.numCols
 
   require(nu > D - 1, "The degrees of freedom is less than the dimension of W0")
-  require(lambda > 0, "The scale parameter must be positive")
+  require(beta > 0, "The scale parameter must be positive")
 
   private val mu0Breeze = mu0.toBreeze.toDenseVector
   private val LBreeze = L.toBreeze.toDenseMatrix
@@ -56,7 +56,7 @@ class NormalWishart(
 
   private def quadraticForm(x: BV[Double]): Double = {
     val xDenseMinusMu = x.toDenseVector - mu0Breeze.toDenseVector
-    D / lambda + nu * (xDenseMinusMu dot (LBreeze \ xDenseMinusMu))
+    D / beta + nu * (xDenseMinusMu dot (LBreeze \ xDenseMinusMu))
   }
 
   private def pdf(x: BV[Double], Sigma: BM[Double]): Double = {
@@ -65,7 +65,7 @@ class NormalWishart(
 
   /** Returns the log-density  at given point, x */
   private def logpdf(x: BV[Double], Sigma: BM[Double]): Double = {
-    val gaussSigma = Matrices.fromBreeze(inv(Sigma.toDenseMatrix) / lambda)
+    val gaussSigma = Matrices.fromBreeze(inv(Sigma.toDenseMatrix) / beta)
     val gaussian = new MultivariateGaussian(mu0, gaussSigma)
     val wishart = new Wishart(nu, L)
     gaussian.logpdf(x) + wishart.logpdf(Matrices.fromBreeze(Sigma))

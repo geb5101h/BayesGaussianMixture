@@ -103,7 +103,7 @@ class VBGaussianMixtureModel(
 
     val mvStudents = nws.map(nw => {
       val studentDF = nw.nu + 1.0 - nw.D
-      val studentPrecision = Matrices.fromBreeze(studentDF / (1 + 1.0 / nw.lambda) * inv(nw.L.toBreeze.toDenseMatrix))
+      val studentPrecision = Matrices.fromBreeze(studentDF / (1 + 1.0 / nw.beta) * inv(nw.L.toBreeze.toDenseMatrix))
       new MultivariateStudentsT(nw.mu0, studentPrecision, studentDF)
     })
 

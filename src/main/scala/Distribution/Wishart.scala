@@ -12,12 +12,12 @@ import breeze.numerics._
  * The Wishart distribution is a matrix-valued distribution with
  * support over the cone of non-negative definite matrices.
  *
- * @param nu0 The degrees of freedom, integer
+ * @param nu The degrees of freedom, Double
  * @param V A DxD positive definite matrix. The natural parameter for the
  *          exponential family
  */
 class Wishart(
-    nu0: Double,
+    nu: Double,
     V: Matrix) extends Serializable {
 
   val D = V.numCols
@@ -30,7 +30,7 @@ class Wishart(
 
   private lazy val VInvBreeze = inv(VBreeze)
 
-  private lazy val multLGTerm = Wishart.multLogGamma(D, nu0 / 2.0)
+  private lazy val multLGTerm = Wishart.multLogGamma(D, nu / 2.0)
 
   /* The expectation of the log-Wishart random variable */
   lazy val expectationLog = {
@@ -48,9 +48,9 @@ class Wishart(
     val xBreeze = x.toDenseMatrix
     val logDetXBreeze = logdet(xBreeze)._2
 
-    val ret = ((nu0 - D - 1.0) / 2.0) * logDetXBreeze
-    -(nu0 * D / 2.0) * math.log(2.0)
-    +(nu0 / 2.0) * logDetVBreeze
+    val ret = ((nu - D - 1.0) / 2.0) * logDetXBreeze
+    -(nu * D / 2.0) * math.log(2.0)
+    +(nu / 2.0) * logDetVBreeze
     -trace(VBreeze * xBreeze) / 2.0
     -multLGTerm
     -math.log(math.Pi) * D * (D - 1.0) / 4.0
