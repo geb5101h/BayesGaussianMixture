@@ -48,28 +48,32 @@ class VBGaussianMixture private (
     private var maxIterations: Int,
     private var seed: Long) extends Serializable {
 
-  def run(data: RDD[Vector], gmm: VBGaussianMixtureModel): VBGaussianMixtureModel = {
-    val D = gmm.D
+  def run(data: RDD[Vector], gmmPrior: VBGMMPrior): VBGaussianMixtureModel = {
     val sc = data.sparkContext
 
     /*
      * Get hyperparameters
      */
-    val alpha0 = gmm.dirichlet.alpha(0)
-    val beta0 = gmm.normalWisharts(0).lambda
-    val mu0: Vector = gmm.normalWisharts(0).mu0
-    val nu0 = gmm.normalWisharts(0).nu
-    val L0: Matrix = gmm.normalWisharts(0).L
-    val K = gmm.D
+    val alpha0 = gmmPrior.alpha0
+    val beta0 = gmmPrior.beta0
+    val mu0: Vector = gmmPrior.mu0
+    val nu0 = gmmPrior.nu0
+    val L0: Matrix = gmmPrior.L0
+    val K = gmmPrior.K
+    val D = L0.numCols
 
     val breezeData = data.map(_.toBreeze)
 
     var llh = Double.MinValue // current log-likelihood
     var llhp = 0.0 // previous log-likelihood
     var iter = 0
-    var dirichlet: Dirichlet = null
-    var nw: Array[NormalWishart] = null
-    var gmmCurrent = gmm
+    /*
+     * initialize posterior estimate
+     */
+    var dirichlet: Dirichlet = new Dirichlet(Vectors.dense(Array.fill(K)(alpha0)))
+    var nw: Array[NormalWishart] = Array.fill(K)(new NormalWishart(mu0, beta0, L0, nu0))
+    var gmmCurrent = new VBGaussianMixtureModel(dirichlet, nw)
+
     while (iter < maxIterations && math.abs(llh - llhp) > convergenceTol) {
 
       /*
@@ -174,3 +178,15 @@ class VBGaussianMixture private (
     }
   }
 }
+
+/*
+ * A class to encapsulate the hyperparameters
+ * for the prior
+ */
+case class VBGMMPrior(
+  val alpha0: Double,
+  val beta0: Double,
+  val mu0: Vector,
+  val nu0: Double,
+  val L0: Matrix,
+  val K: Int)
