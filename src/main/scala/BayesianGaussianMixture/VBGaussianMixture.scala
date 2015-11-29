@@ -18,11 +18,11 @@ import org.apache.spark.mllib.stat.distribution.{ Dirichlet, NormalWishart }
  * mixing weights, as well as a prior distribution for the likelihood parameters.
  *
  * The hierarchical model is given by
- *     pi       ~ Dirichlet(K, alpha_0)
+ *     pi       ~ Dirichlet(alpha_0)
  *     Lambda_k ~ Wishart(W_0, v_0)
- *     mu_k     ~ Normal(mu_0, beta_8 * Lambda_k^-1)
+ *     mu_k     ~ Normal(mu_0, beta_0 * Lambda_k^-1)
  *     z_i      ~ Multinomial(1, pi)
- *     x_i      ~ Normal(mu_i, Lambda_z_i ^-1)
+ *     x_i      ~ Normal(mu_z_i, Lambda_z_i ^-1)
  * where i=1,...,N, N the number of data points and K the number of mixture components.
  * x_i is one observation, which is a real-valued vector of length D. z_i is the latent
  * cluster assignment vector for x_i.
@@ -52,12 +52,16 @@ class VBGaussianMixture private (
     val D = gmm.D
     val sc = data.sparkContext
 
-    val alpha0 = 2.0
-    val beta0 = 2.0
-    val mu0: Vector = null
-    val nu0 = 3.0
-    val L0: Matrix = null
-    val K = 4
+    /*
+     * Get hyperparameters
+     */
+    val alpha0 = gmm.dirichlet.alpha(0)
+    val beta0 = gmm.normalWisharts(0).lambda
+    val mu0: Vector = gmm.normalWisharts(0).mu0
+    val nu0 = gmm.normalWisharts(0).nu
+    val L0: Matrix = gmm.normalWisharts(0).L
+    val K = gmm.D
+
     val breezeData = data.map(_.toBreeze)
 
     var llh = Double.MinValue // current log-likelihood
@@ -65,13 +69,14 @@ class VBGaussianMixture private (
     var iter = 0
     var dirichlet: Dirichlet = null
     var nw: Array[NormalWishart] = null
+    var gmmCurrent = gmm
     while (iter < maxIterations && math.abs(llh - llhp) > convergenceTol) {
 
       /*
        * Perform "E" step, updating
        * responsibilities and doing aggregations
        */
-      val compute = sc.broadcast(ExpectationSum.add(gmm)_)
+      val compute = sc.broadcast(ExpectationSum.add(gmmCurrent)_)
 
       // aggregate the cluster contribution for all sample points
       val sums = breezeData.aggregate(ExpectationSum.zero(K, D))(compute.value, _ += _)
@@ -81,7 +86,9 @@ class VBGaussianMixture private (
        * posterior params
        */
 
-      dirichlet = new Dirichlet(Vectors.dense(sums.weights.map(x => x + alpha0)))
+      dirichlet = new Dirichlet(Vectors.dense(
+        sums.weights
+          .map(w => w + alpha0)))
       nw = {
         val betaNew = sums.weights.map(x => x + beta0)
 
@@ -106,13 +113,17 @@ class VBGaussianMixture private (
         }
         nwRet
       }
+      gmmCurrent = new VBGaussianMixtureModel(dirichlet, nw)
+      llhp = llh
+      llh = sums.logLikelihood
+      iter += 1
 
     }
-    new VBGaussianMixtureModel(dirichlet, nw)
+    gmmCurrent
   }
 
   /* companion class to provide zero constructor for ExpectationSum
-   * Adapted from Spark MLIB GaussianMixtureModel.scala
+   * Adapted from Spark MLLIB GaussianMixtureModel.scala
    */
   private object ExpectationSum {
     def zero(k: Int, d: Int): ExpectationSum = {

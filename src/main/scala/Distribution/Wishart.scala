@@ -31,7 +31,7 @@ class Wishart(
   private lazy val VInvBreeze = inv(VBreeze)
 
   private lazy val multLGTerm = Wishart.multLogGamma(D, nu0 / 2.0)
-  
+
   /* The expectation of the log-Wishart random variable */
   lazy val expectationLog = {
     val offset = multLGTerm + D * math.log(2.0)
@@ -71,8 +71,8 @@ class Wishart(
 }
 
 object Wishart {
-  /* Log of the multivariate gamma function, WITHOUT the constant term
-   * math.log(math.Pi) * D * (D - 1.0) / 4.0 included
+  /* Log of the un-normalized multivariate gamma function
+   *
    */
   def multLogGamma(D: Int, N: Double): Double = {
     (1 to D).map(i => lgamma(N + (1.0 - i) / 2.0)).sum

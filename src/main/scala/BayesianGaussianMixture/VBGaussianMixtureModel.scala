@@ -91,6 +91,7 @@ class VBGaussianMixtureModel(
     val normConst = rawResp.sum
     rawResp.map(x => x / normConst)
   }
+
   /*
    * Compute predictive density at a point. Predictive density is a mixture of multivariate
    * Student's t distributions
@@ -102,7 +103,7 @@ class VBGaussianMixtureModel(
 
     val mvStudents = nws.map(nw => {
       val studentDF = nw.nu + 1.0 - nw.D
-      val studentPrecision = Matrices.fromBreeze((1 + 1.0 / nw.lambda) / studentDF * nw.L.toBreeze.toDenseMatrix)
+      val studentPrecision = Matrices.fromBreeze(studentDF / (1 + 1.0 / nw.lambda) * inv(nw.L.toBreeze.toDenseMatrix))
       new MultivariateStudentsT(nw.mu0, studentPrecision, studentDF)
     })
 

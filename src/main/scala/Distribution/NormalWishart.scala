@@ -56,7 +56,7 @@ class NormalWishart(
 
   private def quadraticForm(x: BV[Double]): Double = {
     val xDenseMinusMu = x.toDenseVector - mu0Breeze.toDenseVector
-    D / lambda + nu * (xDenseMinusMu.t * Linv * xDenseMinusMu)
+    D / lambda + nu * (xDenseMinusMu dot (LBreeze \ xDenseMinusMu))
   }
 
   private def pdf(x: BV[Double], Sigma: BM[Double]): Double = {
