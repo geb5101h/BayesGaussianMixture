@@ -1,5 +1,5 @@
 # BayesGaussianMixture
-This package offer functionality for the variational Bayes Gaussian Mixture Model for density estimation and clustering 
+This package offers functionality for the variational Bayes Gaussian Mixture Model for density estimation and clustering 
 in Apache Spark. It considers the following Bayesian hierarchical model:
 
 ![Latex of model](https://www.dropbox.com/s/npbm8fk3z1hwyts/BayesGaussianMixtureModel.gif?dl=1)
