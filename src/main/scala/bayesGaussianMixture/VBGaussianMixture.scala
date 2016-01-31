@@ -42,7 +42,7 @@ import org.apache.spark.mllib.stat.distribution.{ Dirichlet, NormalWishart }
  * @param maxIterations The maximum number of iterations to perform
  */
 
-class VBGaussianMixture private (
+class VBGaussianMixture(
     private var k: Int,
     private var convergenceTol: Double,
     private var maxIterations: Int,
@@ -75,7 +75,6 @@ class VBGaussianMixture private (
     var gmmCurrent = new VBGaussianMixtureModel(dirichlet, nw)
 
     while (iter < maxIterations && math.abs(llh - llhp) > convergenceTol) {
-
       /*
        * Perform "E" step, updating
        * responsibilities and doing aggregations
@@ -89,6 +88,7 @@ class VBGaussianMixture private (
        * Perform "M" step, updating
        * posterior params
        */
+      println("sums weights: " + sums.weights.foldLeft("")((a,b)=>a+","+b))
 
       dirichlet = new Dirichlet(Vectors.dense(
         sums.weights
@@ -118,8 +118,11 @@ class VBGaussianMixture private (
         nwRet
       }
       gmmCurrent = new VBGaussianMixtureModel(dirichlet, nw)
+      println("Iteration number: " + iter)
       llhp = llh
       llh = sums.logLikelihood
+      println("llhp " + llhp)
+      println("llh " + llh)
       iter += 1
 
     }
